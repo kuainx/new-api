@@ -241,6 +241,11 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		if !shouldRetry(c, newAPIError, common.RetryTimes-retryParam.GetRetry()) {
 			break
 		}
+
+		// 429 限流：等待配置的退避时间（秒）后再重试
+		if newAPIError.StatusCode == http.StatusTooManyRequests && common.Retry429DelaySeconds > 0 {
+			time.Sleep(time.Duration(common.Retry429DelaySeconds) * time.Second)
+		}
 	}
 
 	useChannel := c.GetStringSlice("use_channel")
